@@ -1,8 +1,9 @@
 import math
 from PIL import ImageDraw, Image
+import random
 
 def interpretar(angulo, longitud, cadena, height, width ):
-    anguloactual = 0
+    anguloactual = -90
     x = width/2
     y = height/2
     stack = []
@@ -15,9 +16,9 @@ def interpretar(angulo, longitud, cadena, height, width ):
             y = y + longitud * math.sin(math.radians(anguloactual))
             lines.append(((prex, prey), (x, y)))
         elif char == "+":
-            anguloactual += angulo
+            anguloactual += (random.gauss(0, 25) + angulo)
         elif char == "-":
-            anguloactual -= angulo
+            anguloactual -= (angulo - random.gauss(0, 25))
         elif char == "[":
             stack.append((x, y, anguloactual))
         elif char == "]":
@@ -29,7 +30,7 @@ def renderlines(lines, width, height):
 
     draw = ImageDraw.Draw(img)
     for char in lines:
-        draw.line(char, "#ffffff", 10, None)
+        draw.line(char, "#ffffff", 3, None)
 
     img.save("image.png")
 
@@ -41,7 +42,7 @@ def expand(iteraciones, cadena, rules):
             change = rules.get(char, char)
             newcadena.append(change)
         i +=1 
-        cadena = newcadena
+        cadena = "".join(newcadena)
         newcadena = []
     return cadena
         
@@ -56,7 +57,10 @@ def main():
     iteraciones = int(input("Iteraciones:"))
     rules = {"F": "F[+F]F[-F]F"}
     cadena = expand(iteraciones, cadena, rules)
-    lines = interpretar(angulo, longitud, cadena, width, height)
+    print(cadena[:100])
+    lines = interpretar(angulo, longitud, cadena, height, width)
+    print(len(lines))
+    print(lines[:3])
     renderlines(lines, width, height)
 
 if __name__ == "__main__":
