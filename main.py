@@ -6,6 +6,7 @@ def interpretar(angulo, longitud, cadena, height, width ):
     anguloactual = -90
     x = width/2
     y = height/2
+    profundidad = 4
     stack = []
     lines = []
     for char in cadena:
@@ -14,14 +15,16 @@ def interpretar(angulo, longitud, cadena, height, width ):
             prey = y
             x = x + longitud * math.cos(math.radians(anguloactual))
             y = y + longitud * math.sin(math.radians(anguloactual))
-            lines.append(((prex, prey), (x, y)))
+            lines.append(((prex, prey), (x, y), profundidad))
         elif char == "+":
-            anguloactual += (random.gauss(0, 25) + angulo)
+            anguloactual += (random.gauss(0, 15) + angulo)
         elif char == "-":
-            anguloactual -= (angulo - random.gauss(0, 25))
+            anguloactual -= (angulo - random.gauss(0, 15))
         elif char == "[":
+            profundidad -= 1
             stack.append((x, y, anguloactual))
         elif char == "]":
+            profundidad += 1
             x, y, anguloactual = stack.pop()
     return lines
 
@@ -29,8 +32,8 @@ def renderlines(lines, width, height):
     img = Image.new("RGBA", (width, height))
 
     draw = ImageDraw.Draw(img)
-    for char in lines:
-        draw.line(char, "#ffffff", 3, None)
+    for prev, actual, profundidad in lines:
+        draw.line((prev, actual), "#ffffff", profundidad, None)
 
     img.save("image.png")
 
