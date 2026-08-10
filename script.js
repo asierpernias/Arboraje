@@ -86,9 +86,21 @@
     }
 
     function renderLines(allLines, width, height){
-        canvas.width = width;
-        canvas.height = height;
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        canvas.style.width = width + 'px';
+        canvas.style.height = height + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
         ctx.clearRect(0, 0, width, height);
+
+        const transparent = $('transparentBg').checked;
+        if (!transparent){
+            ctx.fillStyle = $('bgColor').value;
+            ctx.fillRect(0, 0, width, height);
+        }
+
         ctx.lineCap = 'round';
 
         const batchSize = Math.max(4, Math.ceil(allLines.length / 220));
@@ -163,6 +175,15 @@
         link.click();
     });
 
-    canvas.width = parseInt($('width').value, 10);
-    canvas.height = parseInt($('height').value, 10);
+
+    (function initCanvasSize(){
+        const dpr = window.devicePixelRatio || 1;
+        const w = parseInt($('width').value, 10);
+        const h = parseInt($('height').value, 10);
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        canvas.style.width = w + 'px';
+        canvas.style.height = h + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    })();
 })();
