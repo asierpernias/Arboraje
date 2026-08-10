@@ -20,6 +20,8 @@ The result is drawn from one or multiple random origin points on the canvas.
 Open index.html directly in the browser
 ```
 
+Or just open the deployed version
+
 No dependencies, installation, or build process are required.
 
 ## Parameters and buttons 
