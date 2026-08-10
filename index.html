@@ -2,7 +2,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="style.css">
     <title>Ramaje - multi-points L-System generator</title>
 </head>
 <body>
@@ -12,17 +12,17 @@
             <h1>Ramaje</h1>
             <p>Each "F" ramifies itself. Adjust the seed and let it grow.</p>
         </div>
- 
+
         <div class="field">
             <label>Initial string (axiom)</label>
             <input type="text" id="cadena" value="F" spellcheck="false">
         </div>
- 
+
         <div class="field">
             <label>Iterations <span class="val" id="iteracionesVal">3</span></label>
-            <input type="range" id="iteraciones" min="1" max="8" step="1" value="3">
+            <input type="range" id="iteraciones" min="1" max="6" step="1" value="3">
         </div>
- 
+
         <div class="row2">
             <div class="field">
                 <label>Origin points</label>
@@ -33,7 +33,7 @@
                 <input type="number" id="longitud" min="1" max="60" value="9">
             </div>
         </div>
- 
+
         <div class="row2">
             <div class="field">
                 <label>Canvas width</label>
@@ -44,18 +44,25 @@
                 <input type="number" id="height" min="200" max="2000" value="600">
             </div>
         </div>
- 
+
         <div class="divider"></div>
- 
+
+        <div class="field" style="flex-direction:row; align-items:center; gap:8px;">
+            <input type="checkbox" id="avoidCollisions" checked style="width:auto; margin:0;">
+            <label style="margin:0;">Avoid collisions (between and within patterns)</label>
+        </div>
+
+        <div class="divider"></div>
+
         <button class="grow-btn" id="growBtn">Make it grow!</button>
         <div class="btn-row">
             <button class="ghost-btn" id="reseedBtn">New seed</button>
             <button class="ghost-btn" id="downloadBtn">Download PNG</button>
         </div>
- 
+
         <div class="meta-line" id="metaLine">Ready · not generated yet</div>
     </aside>
- 
+
     <main class="stage">
         <div class="canvas-wrap" id="canvasWrap">
             <canvas id="canvas" width="800" height="600"></canvas>
@@ -64,8 +71,7 @@
             Click <b>Make it grow!</b> to expand the axiom and draw the lines over the canvas.
         </div>
     </main>
- 
+
     <script src="script.js"></script>
 </body>
 </html>
- 

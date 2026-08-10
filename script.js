@@ -1,6 +1,6 @@
 (function() {
     const $ = (id) => document.getElementById(id);
-    const canvas = $(`canvas`);
+    const canvas = $('canvas');
     const ctx = canvas.getContext('2d');
     const emptyHint = $('emptyHint');
     const metaLine = $('metaLine');
@@ -11,10 +11,10 @@
 
     function randGauss(mean, stdev) {
         let u1 = 0, u2 = 0;
-        while (u1 === 0) ui = Math.random();
+        while (u1 === 0) u1 = Math.random();
         while (u2 === 0) u2 = Math.random();
         const z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
-        return z0 *stdev + mean;
+        return z0 * stdev + mean;
     }
 
     function randInt(min, max) {
@@ -31,33 +31,57 @@
         return cords;
     }
 
+    // Hard cap so the L-system string can't blow up the tab's memory/CPU.
+    // The rule "F -> F[+F]F[-F]F" roughly quadruples the string each
+    // iteration, so a few extra iterations can mean millions of characters.
+    const MAX_CADENA_CHARS = 120000;
+
     function expand(iteraciones, cadena, rules){
         for (let i = 0; i < iteraciones; i++){
             let out = '';
             for (const char of cadena) {
                 out += (rules[char] !== undefined ? rules[char] : char);
+                if (out.length >= MAX_CADENA_CHARS) break;
             }
             cadena = out;
+            if (cadena.length >= MAX_CADENA_CHARS){
+                cadena = cadena.slice(0, MAX_CADENA_CHARS);
+                break;
+            }
         }
         return cadena;
     }
 
-    function interpretar(startx, starty, angulo, longitud, cadena, height, width){
+    function cellKey(x, y, cellSize){
+        return Math.floor(x / cellSize) + '_' + Math.floor(y / cellSize);
+    }
+
+    function interpretar(startx, starty, angulo, longitud, cadena, height, width, occupied, cellSize){
         let anguloActual = randInt(0, 360);
-        let x = startx; let y = starty;
-        let profundidad = 5;
+        let x = startx, y = starty;
+        let profundidad = 4;
         const stack = [];
         const lines = [];
         let fuera = false;
 
+        if (occupied) occupied.add(cellKey(x, y, cellSize));
+
         for (const char of cadena){
             if (char === 'F'){
-                const prex = x, prey= y;
+                const prex = x, prey = y;
                 x = x + longitud * Math.cos(anguloActual * Math.PI / 180);
                 y = y + longitud * Math.sin(anguloActual * Math.PI / 180);
                 if (x < 20 || x > width - 20 || y < 20 || y > height - 20){
                     fuera = true;
                     x = prex; y = prey;
+                } else if (occupied) {
+                    const key = cellKey(x, y, cellSize);
+                    if (occupied.has(key)){
+                        fuera = true;
+                        x = prex; y = prey;
+                    } else {
+                        occupied.add(key);
+                    }
                 }
                 if (!fuera){
                     lines.push([[prex, prey], [x, y], profundidad]);
@@ -73,9 +97,9 @@
                 fuera = false;
                 profundidad += 1;
                 const popped = stack.pop();
-                if (popped) {[x, y, anguloActual] = popped;}
+                if (popped) { [x, y, anguloActual] = popped; }
             }
-        } 
+        }
         return lines;
     }
 
@@ -89,9 +113,9 @@
         let i = 0;
 
         function step() {
-            const end = Math.min(i + batchSize, allLines.length);   
-            for (; i < end; i++ ){
-                const [prev , cur, profundidad] = allLines[i];
+            const end = Math.min(i + batchSize, allLines.length);
+            for (; i < end; i++){
+                const [prev, cur, profundidad] = allLines[i];
                 const r = randInt(0, 50);
                 const g = randInt(100, 255);
                 const b = randInt(0, 80);
@@ -120,24 +144,39 @@
         const iteraciones = parseInt($('iteraciones').value, 10);
         let cadena = $('cadena').value.trim() || 'F';
         const angulo = randInt(0, 360);
-        const rules = {F: 'F[+F]F[-F]F'};
+        const rules = { F: 'F[+F]F[-F]F' };
 
         const canvasWrap = $('canvasWrap');
-        canvasWrap.style.width = width +'px';
+        canvasWrap.style.width = width + 'px';
 
         const points = randomPoints(value, width, height);
         const expanded = expand(iteraciones, cadena, rules);
 
         emptyHint.style.display = 'none';
-        metaLine.textContent = 'generating...';
+        metaLine.textContent = 'generando…';
 
-        const allLines = [];
-        for (const [startx, starty] of points){
-            const lines = interpretar(startx, starty, angulo, longitud, expanded, height, width);
-            allLines.push(...lines);
+        const avoidCollisions = $('avoidCollisions').checked;
+        const cellSize = Math.max(3, longitud * 0.6);
+        const occupied = avoidCollisions ? new Set() : null;
+        if (occupied){
+            // reserve the origin points themselves so two patterns can't spawn on top of each other
+            for (const [px, py] of points) occupied.add(cellKey(px, py, cellSize));
         }
 
-        metaLine.innerHTML = `cadena: <span>${expanded.length}</span> caract. · orígenes: <span>${points.length}</span>`;
+        const MAX_TOTAL_LINES = 40000;
+        const allLines = [];
+        let truncated = false;
+        for (const [startx, starty] of points){
+            const lines = interpretar(startx, starty, angulo, longitud, expanded, height, width, occupied, cellSize);
+            for (const line of lines){
+                if (allLines.length >= MAX_TOTAL_LINES){ truncated = true; break; }
+                allLines.push(line);
+            }
+            if (truncated) break;
+        }
+
+        const cap = truncated ? ' · límite alcanzado, resultado recortado' : '';
+        metaLine.innerHTML = `cadena: <span>${expanded.length}</span> caract. · orígenes: <span>${points.length}</span>${cap}`;
         renderLines(allLines, width, height);
     }
 
