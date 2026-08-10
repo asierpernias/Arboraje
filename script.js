@@ -30,10 +30,6 @@
         }
         return cords;
     }
-
-    // Hard cap so the L-system string can't blow up the tab's memory/CPU.
-    // The rule "F -> F[+F]F[-F]F" roughly quadruples the string each
-    // iteration, so a few extra iterations can mean millions of characters.
     const MAX_CADENA_CHARS = 120000;
 
     function expand(iteraciones, cadena, rules){
@@ -52,19 +48,13 @@
         return cadena;
     }
 
-    function cellKey(x, y, cellSize){
-        return Math.floor(x / cellSize) + '_' + Math.floor(y / cellSize);
-    }
-
-    function interpretar(startx, starty, angulo, longitud, cadena, height, width, occupied, cellSize){
+    function interpretar(startx, starty, angulo, longitud, cadena, height, width){
         let anguloActual = randInt(0, 360);
         let x = startx, y = starty;
         let profundidad = 4;
         const stack = [];
         const lines = [];
         let fuera = false;
-
-        if (occupied) occupied.add(cellKey(x, y, cellSize));
 
         for (const char of cadena){
             if (char === 'F'){
@@ -74,14 +64,6 @@
                 if (x < 20 || x > width - 20 || y < 20 || y > height - 20){
                     fuera = true;
                     x = prex; y = prey;
-                } else if (occupied) {
-                    const key = cellKey(x, y, cellSize);
-                    if (occupied.has(key)){
-                        fuera = true;
-                        x = prex; y = prey;
-                    } else {
-                        occupied.add(key);
-                    }
                 }
                 if (!fuera){
                     lines.push([[prex, prey], [x, y], profundidad]);
@@ -155,19 +137,11 @@
         emptyHint.style.display = 'none';
         metaLine.textContent = 'generando…';
 
-        const avoidCollisions = $('avoidCollisions').checked;
-        const cellSize = Math.max(3, longitud * 0.6);
-        const occupied = avoidCollisions ? new Set() : null;
-        if (occupied){
-            // reserve the origin points themselves so two patterns can't spawn on top of each other
-            for (const [px, py] of points) occupied.add(cellKey(px, py, cellSize));
-        }
-
         const MAX_TOTAL_LINES = 40000;
         const allLines = [];
         let truncated = false;
         for (const [startx, starty] of points){
-            const lines = interpretar(startx, starty, angulo, longitud, expanded, height, width, occupied, cellSize);
+            const lines = interpretar(startx, starty, angulo, longitud, expanded, height, width);
             for (const line of lines){
                 if (allLines.length >= MAX_TOTAL_LINES){ truncated = true; break; }
                 allLines.push(line);
